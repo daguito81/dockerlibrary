@@ -1,0 +1,17 @@
+
+version: '3.1'
+
+services:
+
+  neo4j-db:
+    image: neo4j
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: DagoKabel
+    volumes: 
+      - /home/$USER/data/databases/NoSQL/neo4j/lab:/data
+    ports:
+     - 7474:7474
+     - 7687:7687
+

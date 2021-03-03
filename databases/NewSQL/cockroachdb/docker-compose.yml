@@ -1,0 +1,52 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  roach1-db:
+    container_name: roach1
+    image: cockroachdb/cockroach
+    restart: always
+    command: start --insecure --join=roach1,roach2,roach3
+    volumes: 
+      - /home/$USER/data/databases/NewSQL/cockoroachdb/lab/roach1:/cockroach/cockroach-data
+    ports:
+     - 26257:26257
+     - 8080:8080
+    networks:
+      roachnet:
+        aliases: 
+          - roach1
+
+  roach2-db:
+    container_name: roach2
+    image: cockroachdb/cockroach
+    restart: always
+    depends_on: 
+      - roach1-db
+    command: start --insecure --join=roach1,roach2,roach3
+    volumes: 
+      - /home/$USER/data/databases/NewSQL/cockoroachdb/lab/roach2:/cockroach/cockroach-data
+    networks:
+      roachnet:
+        aliases: 
+          - roach2
+
+  roach3-db:
+    container_name: roach3
+    image: cockroachdb/cockroach
+    restart: always
+    depends_on: 
+      - roach1-db
+    command: start --insecure --join=roach1,roach2,roach3
+    volumes: 
+      - /home/$USER/data/databases/NewSQL/cockoroachdb/lab/roach3:/cockroach/cockroach-data
+    networks:
+      roachnet:
+        aliases: 
+          - roach3
+networks:
+  roachnet:
+    driver: bridge
+
+# docker exec -it roach1 ./cockroach init --insecure
