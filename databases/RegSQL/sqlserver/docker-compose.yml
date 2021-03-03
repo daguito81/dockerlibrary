@@ -1,0 +1,24 @@
+# MS SQL SERVER Express edition with volume bind
+version: '3.8'
+
+services:
+
+  mssql-db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    restart: always
+    user: root
+    volumes:
+      - /home/$USER/data/databases/OldSQL/sqlserver/lab/data:/var/opt/mssql/data
+      - /home/$USER/data/databases/OldSQL/sqlserver/lab/log:/var/opt/mssql/log
+      - /home/$USER/data/databases/OldSQL/sqlserver/lab/secrets:/var/opt/mssql/secrets
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: Dago.Kabel2021
+    ports:
+      - 31433:1433
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
