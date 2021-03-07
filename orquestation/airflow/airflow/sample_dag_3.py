@@ -115,16 +115,26 @@ def load_data_db():
         logging.info("Finished writing data to DB")
 
 
-def train_model():
+def train_model(*args, **kwargs):
+    logging.info(kwargs)
     engine = create_engine(DB_URL)
     df = pd.read_sql("SELECT * FROM iris_data", engine)
     X = df.drop('target', axis=1)
     y = df['target']
+    try:
+        trees = kwargs['trees']
+    except KeyError:
+        logging.info("No Keyword trees found, using default")
+        trees = args[0]
+    except IndexError:
+        logging.info("Now positional argument, using default")
+        trees = 100
 
-    model = RandomForestClassifier()
+    model = RandomForestClassifier(n_estimators=int(trees))
+
     model.fit(X, y)
 
-    dump(model, "rfmodel.joblib")
+    dump(model, "rfmodel{}.joblib".format(trees))
 
 
 def load_test_data(**kwargs):
@@ -133,10 +143,19 @@ def load_test_data(**kwargs):
     ti.xcom_push(key='test_data', value=json.dumps(df.to_json()))
 
 
-def test_model(**kwargs):
+def test_model(*args, **kwargs):
+    try:
+        trees = kwargs['trees']
+    except KeyError:
+        logging.info("No Keyword trees found, using default")
+        trees = args[0]
+    except IndexError:
+        logging.info("Now positional argument, using default")
+        trees = 100
+
     ti = kwargs['ti']
     test_data = ti.xcom_pull(key='test_data')
-    model = load("rfmodel.joblib")
+    model = load("rfmodel{}.joblib".format(trees))
     df = pd.read_json(json.loads(test_data))
     X_test = df.drop('target', axis=1)
     y_test = df['target']
@@ -177,13 +196,6 @@ load_db = PythonOperator(
     dag=dag,
 )
 
-train_model = PythonOperator(
-    task_id='train_model',
-    provide_context=False,
-    python_callable=train_model,
-    dag=dag,
-)
-
 load_test = PythonOperator(
     task_id='load_test_data',
     provide_context=True,
@@ -191,14 +203,31 @@ load_test = PythonOperator(
     dag=dag,
 )
 
-test_model = PythonOperator(
-    task_id='test_model',
-    provide_context=True,
-    python_callable=test_model,
+finish = BashOperator(
+    task_id="finish",
+    bash_command = "echo ------ FINISHED ------",
     dag=dag,
 )
 
 
-[get_oltp, get_master] >> process_data
-process_data >> load_db >> train_model
-process_data >> [train_model, load_test] >> test_model
+# for trees in [10, 20, 50, 100, 200]:
+trees = 100
+train_mod = PythonOperator(
+    task_id='train_model_' + str(trees),
+    provide_context=True,
+    python_callable=train_model,
+    op_args = [trees],
+    # op_kwargs={'trees', trees},
+    dag=dag,
+    )
+
+test_mod = PythonOperator(
+    task_id='test_model_' + str(trees),
+    provide_context=True,
+    python_callable=test_model,
+    op_args = [trees],
+    # op_kwargs={'trees', trees},
+    dag=dag,
+)
+process_data >> load_test >> test_mod >> finish
+[get_oltp, get_master] >> process_data >> load_db >> [train_mod] >> test_mod
