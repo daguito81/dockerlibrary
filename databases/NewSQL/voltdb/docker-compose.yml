@@ -1,0 +1,57 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  volt1-db:
+    container_name: volt1
+    image: voltdb/voltdb-community
+    restart: always
+    volumes: 
+      - /home/$USER/data/databases/NewSQL/voltdb/lab/volt1:/var/
+    ports:
+     - 21212:21212
+     - 21211:21211
+     - 8080:8080
+     - 3021:3021
+     - 5555:5555
+     - 7181:7181
+     - 22:22
+    environment: 
+      HOST_COUNT: 3
+      HOSTS: volt1,volt2,volt3
+    networks:
+      voltnet:
+        aliases: 
+          - volt1
+
+  volt2-db:
+    container_name: volt2
+    image: voltdb/voltdb-community
+    restart: always
+    volumes: 
+      - /home/$USER/data/databases/NewSQL/voltdb/lab/volt2:/var/
+    environment: 
+      HOST_COUNT: 3
+      HOSTS: volt1,volt2,volt3
+    networks:
+      voltnet:
+        aliases: 
+          - volt2
+
+  volt3-db:
+    container_name: volt3
+    image: voltdb/voltdb-community
+    restart: always
+    volumes: 
+      - /home/$USER/data/databases/NewSQL/voltdb/lab/volt3:/var/
+    environment: 
+      HOST_COUNT: 3
+      HOSTS: volt1,volt2,volt3
+    networks:
+      voltnet:
+        aliases: 
+          - volt3
+networks:
+  voltnet:
+    driver: bridge
