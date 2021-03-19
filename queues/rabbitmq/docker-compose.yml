@@ -14,3 +14,4 @@ services:
 networks: 
   rabbitmq_net:
     driver: bridge
+
