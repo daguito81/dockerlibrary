@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  amqp-demo-broker:
+    container_name: amqp-demo-broker
+    hostname: amqp-demo-broker
+    image: registry.redhat.io/amq7/amq-broker
+    ports:
+      # ui
+      - "8161:8161"
+      # all protocols
+      - "6161:6161"
+    environment:
+      AMQ_USER: "admin"
+      AMQ_PASSWORD: "admin"
+      BROKER_XML: $BROKER_XML
+    networks:
+      - amqp-demo-network
+networks:
+  amqp-demo-network:
+    name: amqp-demo-network
